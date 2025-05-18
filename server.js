@@ -19,6 +19,10 @@ app.use('/api/skills', skillRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/experiences', experienceRoutes);
 
+// Database Connection
+const connectDB = require('./config/db');
+connectDB();
+
 // Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
