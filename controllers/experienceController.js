@@ -1,4 +1,13 @@
 const Experience = require('../models/Experience');
+const Joi = require('joi');
+
+// Validation schema
+const experienceSchema = Joi.object({
+  title: Joi.string().required(),
+  company: Joi.string().required(),
+  duration: Joi.string().required(),
+  description: Joi.string().required(),
+});
 
 // Get all experiences
 exports.getAllExperiences = async (req, res) => {
@@ -23,6 +32,9 @@ exports.getExperienceById = async (req, res) => {
 
 // Create a new experience
 exports.createExperience = async (req, res) => {
+  const { error } = experienceSchema.validate(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
+
   const experience = new Experience({
     title: req.body.title,
     company: req.body.company,
@@ -40,6 +52,9 @@ exports.createExperience = async (req, res) => {
 
 // Update an experience
 exports.updateExperience = async (req, res) => {
+  const { error } = experienceSchema.validate(req.body, { allowUnknown: true });
+  if (error) return res.status(400).json({ message: error.details[0].message });
+
   try {
     const experience = await Experience.findById(req.params.id);
     if (!experience) return res.status(404).json({ message: 'Experience not found' });
