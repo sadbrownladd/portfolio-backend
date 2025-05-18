@@ -1,4 +1,11 @@
 const Skill = require('../models/Skill');
+const Joi = require('joi');
+
+// Validation schema
+const skillSchema = Joi.object({
+  name: Joi.string().required(),
+  progress: Joi.number().min(0).max(100).required(),
+});
 
 // Get all skills
 exports.getAllSkills = async (req, res) => {
@@ -23,6 +30,9 @@ exports.getSkillById = async (req, res) => {
 
 // Create a new skill
 exports.createSkill = async (req, res) => {
+  const { error } = skillSchema.validate(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
+
   const skill = new Skill({
     name: req.body.name,
     progress: req.body.progress,
@@ -38,6 +48,9 @@ exports.createSkill = async (req, res) => {
 
 // Update a skill
 exports.updateSkill = async (req, res) => {
+  const { error } = skillSchema.validate(req.body, { allowUnknown: true });
+  if (error) return res.status(400).json({ message: error.details[0].message });
+
   try {
     const skill = await Skill.findById(req.params.id);
     if (!skill) return res.status(404).json({ message: 'Skill not found' });
