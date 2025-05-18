@@ -1,4 +1,12 @@
 const Education = require('../models/Education');
+const Joi = require('joi');
+
+// Validation schema
+const educationSchema = Joi.object({
+  degree: Joi.string().required(),
+  institution: Joi.string().required(),
+  year: Joi.string().required(),
+});
 
 // Get all education records
 exports.getAllEducation = async (req, res) => {
@@ -23,6 +31,9 @@ exports.getEducationById = async (req, res) => {
 
 // Create a new education record
 exports.createEducation = async (req, res) => {
+  const { error } = educationSchema.validate(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
+
   const education = new Education({
     degree: req.body.degree,
     institution: req.body.institution,
@@ -39,6 +50,9 @@ exports.createEducation = async (req, res) => {
 
 // Update an education record
 exports.updateEducation = async (req, res) => {
+  const { error } = educationSchema.validate(req.body, { allowUnknown: true });
+  if (error) return res.status(400).json({ message: error.details[0].message });
+
   try {
     const education = await Education.findById(req.params.id);
     if (!education) return res.status(404).json({ message: 'Education not found' });
