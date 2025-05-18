@@ -1,4 +1,13 @@
 const Project = require('../models/Project');
+const Joi = require('joi');
+
+// Validation schema
+const projectSchema = Joi.object({
+  title: Joi.string().required(),
+  description: Joi.string().required(),
+  image: Joi.string().required(),
+  link: Joi.string().uri().required(),
+});
 
 // Get all projects
 exports.getAllProjects = async (req, res) => {
@@ -23,6 +32,9 @@ exports.getProjectById = async (req, res) => {
 
 // Create a new project
 exports.createProject = async (req, res) => {
+  const { error } = projectSchema.validate(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
+
   const project = new Project({
     title: req.body.title,
     description: req.body.description,
@@ -40,6 +52,9 @@ exports.createProject = async (req, res) => {
 
 // Update a project
 exports.updateProject = async (req, res) => {
+  const { error } = projectSchema.validate(req.body, { allowUnknown: true });
+  if (error) return res.status(400).json({ message: error.details[0].message });
+
   try {
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
