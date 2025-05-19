@@ -1,15 +1,14 @@
 const mongoose = require('mongoose');
 
-// Set strictQuery to suppress deprecation warning
-mongoose.set('strictQuery', true);
-
 const connectDB = async () => {
   try {
+    console.log('Attempting to connect to MongoDB with URI:', process.env.MONGODB_URI);
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
     console.log('MongoDB connected successfully');
+    mongoose.set('strictQuery', false);
   } catch (err) {
     console.error('MongoDB connection error:', err.message);
     process.exit(1);
