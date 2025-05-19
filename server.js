@@ -20,10 +20,14 @@ app.use((req, res, next) => {
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('Server Error:', err.stack);
-  res.status(500).json({ message: 'Internal Server Error' });
+// Log response status and body
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function (body) {
+    console.log(`Response Status: ${res.statusCode}, Body:`, body);
+    return originalJson.call(this, body);
+  };
+  next();
 });
 
 app.use('/api/education', educationRoutes);
@@ -31,6 +35,12 @@ app.use('/api/skills', skillRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/experience', experienceRoutes);
 app.use('/api/contact', contactRoutes);
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Server Error:', err.stack);
+  res.status(500).json({ message: 'Internal Server Error' });
+});
 
 const PORT = process.env.PORT || 5000;
 
