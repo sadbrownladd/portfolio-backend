@@ -8,6 +8,7 @@ const experienceSchema = Joi.object({
   company: Joi.string().required(),
   duration: Joi.string().required(),
   description: Joi.string().allow('').optional(),
+  role: Joi.string().allow('').optional(), // Added to allow 'role' field
 });
 
 const validateExperience = (data) => {
@@ -39,6 +40,7 @@ exports.createExperience = async (req, res) => {
       company: req.body.company,
       duration: req.body.duration,
       description: req.body.description,
+      role: req.body.role || '', // Include role in the model
     });
     const savedExperience = await experience.save();
     res.status(201).json(savedExperience);
@@ -66,7 +68,7 @@ exports.updateExperience = async (req, res) => {
 
     const experience = await Experience.findByIdAndUpdate(
       req.params.id,
-      { title: req.body.title, company: req.body.company, duration: req.body.duration, description: req.body.description },
+      { title: req.body.title, company: req.body.company, duration: req.body.duration, description: req.body.description, role: req.body.role },
       { new: true }
     );
     if (!experience) return res.status(404).json({ message: 'Experience not found' });
