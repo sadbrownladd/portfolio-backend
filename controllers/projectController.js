@@ -1,85 +1,98 @@
+const express = require('express');
+const router = express.Router();
 const Project = require('../models/Project');
 const Joi = require('joi');
 
-// Validation schema
 const projectSchema = Joi.object({
-  title: Joi.string().required(),
-  description: Joi.string().required(),
-  image: Joi.string().required(),
-  link: Joi.string().uri().required(),
+  title: Joi.string().required().messages({
+    'string.empty': 'Title is required',
+    'any.required': 'Title is required',
+  }),
+  description: Joi.string().allow('').optional().messages({
+    'string.base': 'Description must be a string',
+  }),
+  link: Joi.string().uri().allow('').optional().messages({
+    'string.uri': 'Link must be a valid URL',
+  }),
 });
 
-// Get all projects
+const validateProject = (data) => {
+  const { error } = projectSchema.validate(data, { abortEarly: false });
+  if (error) {
+    console.error('Validation Error:', error.details);
+    return error.details.map((detail) => detail.message);
+  }
+  return null;
+};
+
 exports.getAllProjects = async (req, res) => {
   try {
     const projects = await Project.find();
-    res.status(200).json(projects);
+    res.json(projects);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Get Projects Error:', err);
+    res.status(500).json({ message: 'Failed to fetch projects' });
   }
 };
 
-// Get a single project
+exports.createProject = async (req, res) => {
+  try {
+    const validationErrors = validateProject(req.body);
+    if (validationErrors) {
+      return res.status(400).json({ errors: validationErrors });
+    }
+
+    const project = new Project({
+      title: req.body.title,
+      description: req.body.description || '',
+      link: req.body.link || '',
+    });
+    const savedProject = await project.save();
+    res.status(201).json(savedProject);
+  } catch (err) {
+    console.error('Create Project Error:', err);
+    res.status(500).json({ message: 'Failed to create project' });
+  }
+};
+
 exports.getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
-    res.status(200).json(project);
+    res.json(project);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Get Project Error:', err);
+    res.status(500).json({ message: 'Failed to fetch project' });
   }
 };
 
-// Create a new project
-exports.createProject = async (req, res) => {
-  const { error } = projectSchema.validate(req.body);
-  if (error) return res.status(400).json({ message: error.details[0].message });
-
-  const project = new Project({
-    title: req.body.title,
-    description: req.body.description,
-    image: req.body.image,
-    link: req.body.link,
-  });
-
-  try {
-    const newProject = await project.save();
-    res.status(201).json(newProject);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
-
-// Update a project
 exports.updateProject = async (req, res) => {
-  const { error } = projectSchema.validate(req.body, { allowUnknown: true });
-  if (error) return res.status(400).json({ message: error.details[0].message });
-
   try {
-    const project = await Project.findById(req.params.id);
+    const validationErrors = validateProject(req.body);
+    if (validationErrors) {
+      return res.status(400).json({ errors: validationErrors });
+    }
+
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { title: req.body.title, description: req.body.description, link: req.body.link },
+      { new: true, runValidators: true }
+    );
     if (!project) return res.status(404).json({ message: 'Project not found' });
-
-    project.title = req.body.title || project.title;
-    project.description = req.body.description || project.description;
-    project.image = req.body.image || project.image;
-    project.link = req.body.link || project.link;
-
-    const updatedProject = await project.save();
-    res.status(200).json(updatedProject);
+    res.json(project);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    console.error('Update Project Error:', err);
+    res.status(500).json({ message: 'Failed to update project' });
   }
 };
 
-// Delete a project
 exports.deleteProject = async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id);
+    const project = await Project.findByIdAndDelete(req.params.id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
-
-    await project.remove();
-    res.status(200).json({ message: 'Project deleted' });
+    res.json({ message: 'Project deleted' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Delete Project Error:', err);
+    res.status(500).json({ message: 'Failed to delete project' });
   }
 };
