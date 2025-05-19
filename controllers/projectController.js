@@ -14,6 +14,9 @@ const projectSchema = Joi.object({
   link: Joi.string().uri().allow('').optional().messages({
     'string.uri': 'Link must be a valid URL',
   }),
+  image: Joi.string().allow('').optional().messages({
+    'string.base': 'Image must be a string',
+  }),
 });
 
 const validateProject = (data) => {
@@ -51,6 +54,7 @@ exports.createProject = async (req, res) => {
       title: req.body.title,
       description: req.body.description || '',
       link: req.body.link || '',
+      image: req.body.image || '',
     });
     const savedProject = await project.save();
     console.log('Project saved successfully:', savedProject);
@@ -87,7 +91,7 @@ exports.updateProject = async (req, res) => {
     console.log('Updating project with ID:', req.params.id);
     const project = await Project.findByIdAndUpdate(
       req.params.id,
-      { title: req.body.title, description: req.body.description, link: req.body.link },
+      { title: req.body.title, description: req.body.description, link: req.body.link, image: req.body.image },
       { new: true, runValidators: true }
     );
     if (!project) {

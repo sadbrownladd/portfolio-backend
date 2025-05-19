@@ -1,79 +1,83 @@
+const express = require('express');
+const router = express.Router();
 const Skill = require('../models/Skill');
 const Joi = require('joi');
 
-// Validation schema
 const skillSchema = Joi.object({
   name: Joi.string().required(),
   progress: Joi.number().min(0).max(100).required(),
 });
 
-// Get all skills
+const validateSkill = (data) => {
+  const { error } = skillSchema.validate(data, { abortEarly: false });
+  if (error) {
+    return error.details.map((detail) => detail.message);
+  }
+  return null;
+};
+
 exports.getAllSkills = async (req, res) => {
   try {
     const skills = await Skill.find();
-    res.status(200).json(skills);
+    res.json(skills);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Failed to fetch skills' });
   }
 };
 
-// Get a single skill
+exports.createSkill = async (req, res) => {
+  try {
+    const validationErrors = validateSkill(req.body);
+    if (validationErrors) {
+      return res.status(400).json({ errors: validationErrors });
+    }
+
+    const skill = new Skill({
+      name: req.body.name,
+      progress: req.body.progress,
+    });
+    const savedSkill = await skill.save();
+    res.status(201).json(savedSkill);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to create skill' });
+  }
+};
+
 exports.getSkillById = async (req, res) => {
   try {
     const skill = await Skill.findById(req.params.id);
     if (!skill) return res.status(404).json({ message: 'Skill not found' });
-    res.status(200).json(skill);
+    res.json(skill);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Failed to fetch skill' });
   }
 };
 
-// Create a new skill
-exports.createSkill = async (req, res) => {
-  const { error } = skillSchema.validate(req.body);
-  if (error) return res.status(400).json({ message: error.details[0].message });
-
-  const skill = new Skill({
-    name: req.body.name,
-    progress: req.body.progress,
-  });
-
-  try {
-    const newSkill = await skill.save();
-    res.status(201).json(newSkill);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
-
-// Update a skill
 exports.updateSkill = async (req, res) => {
-  const { error } = skillSchema.validate(req.body, { allowUnknown: true });
-  if (error) return res.status(400).json({ message: error.details[0].message });
-
   try {
-    const skill = await Skill.findById(req.params.id);
+    const validationErrors = validateSkill(req.body);
+    if (validationErrors) {
+      return res.status(400).json({ errors: validationErrors });
+    }
+
+    const skill = await Skill.findByIdAndUpdate(
+      req.params.id,
+      { name: req.body.name, progress: req.body.progress },
+      { new: true }
+    );
     if (!skill) return res.status(404).json({ message: 'Skill not found' });
-
-    skill.name = req.body.name || skill.name;
-    skill.progress = req.body.progress || skill.progress;
-
-    const updatedSkill = await skill.save();
-    res.status(200).json(updatedSkill);
+    res.json(skill);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(500).json({ message: 'Failed to update skill' });
   }
 };
 
-// Delete a skill
 exports.deleteSkill = async (req, res) => {
   try {
-    const skill = await Skill.findById(req.params.id);
+    const skill = await Skill.findByIdAndDelete(req.params.id);
     if (!skill) return res.status(404).json({ message: 'Skill not found' });
-
-    await skill.remove();
-    res.status(200).json({ message: 'Skill deleted' });
+    res.json({ message: 'Skill deleted' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Failed to delete skill' });
   }
 };
