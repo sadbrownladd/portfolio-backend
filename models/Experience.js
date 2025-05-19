@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const experienceSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
+    required: false, // Made optional to match controller flexibility
+    default: '',    // Default to empty string if not provided
   },
   company: {
     type: String,
@@ -15,7 +16,13 @@ const experienceSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: true,
+    required: false, // Made optional to match controller flexibility
+    default: '',    // Default to empty string if not provided
+  },
+  role: {
+    type: String,
+    required: false, // Optional field to handle frontend input
+    default: '',    // Default to empty string if not provided
   },
 });
 
