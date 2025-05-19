@@ -1,82 +1,85 @@
+const express = require('express');
+const router = express.Router();
 const Education = require('../models/Education');
 const Joi = require('joi');
 
-// Validation schema
 const educationSchema = Joi.object({
   degree: Joi.string().required(),
   institution: Joi.string().required(),
   year: Joi.string().required(),
 });
 
-// Get all education records
+const validateEducation = (data) => {
+  const { error } = educationSchema.validate(data, { abortEarly: false });
+  if (error) {
+    return error.details.map((detail) => detail.message);
+  }
+  return null;
+};
+
 exports.getAllEducation = async (req, res) => {
   try {
     const education = await Education.find();
-    res.status(200).json(education);
+    res.json(education);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Failed to fetch education' });
   }
 };
 
-// Get a single education record
+exports.createEducation = async (req, res) => {
+  try {
+    const validationErrors = validateEducation(req.body);
+    if (validationErrors) {
+      return res.status(400).json({ errors: validationErrors });
+    }
+
+    const education = new Education({
+      degree: req.body.degree,
+      institution: req.body.institution,
+      year: req.body.year,
+    });
+    const savedEducation = await education.save();
+    res.status(201).json(savedEducation);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to create education' });
+  }
+};
+
 exports.getEducationById = async (req, res) => {
   try {
     const education = await Education.findById(req.params.id);
     if (!education) return res.status(404).json({ message: 'Education not found' });
-    res.status(200).json(education);
+    res.json(education);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Failed to fetch education' });
   }
 };
 
-// Create a new education record
-exports.createEducation = async (req, res) => {
-  const { error } = educationSchema.validate(req.body);
-  if (error) return res.status(400).json({ message: error.details[0].message });
-
-  const education = new Education({
-    degree: req.body.degree,
-    institution: req.body.institution,
-    year: req.body.year,
-  });
-
-  try {
-    const newEducation = await education.save();
-    res.status(201).json(newEducation);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
-
-// Update an education record
 exports.updateEducation = async (req, res) => {
-  const { error } = educationSchema.validate(req.body, { allowUnknown: true });
-  if (error) return res.status(400).json({ message: error.details[0].message });
-
   try {
-    const education = await Education.findById(req.params.id);
+    const validationErrors = validateEducation(req.body);
+    if (validationErrors) {
+      return res.status(400).json({ errors: validationErrors });
+    }
+
+    const education = await Education.findByIdAndUpdate(
+      req.params.id,
+      { degree: req.body.degree, institution: req.body.institution, year: req.body.year },
+      { new: true }
+    );
     if (!education) return res.status(404).json({ message: 'Education not found' });
-
-    education.degree = req.body.degree || education.degree;
-    education.institution = req.body.institution || education.institution;
-    education.year = req.body.year || education.year;
-
-    const updatedEducation = await education.save();
-    res.status(200).json(updatedEducation);
+    res.json(education);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(500).json({ message: 'Failed to update education' });
   }
 };
 
-// Delete an education record
 exports.deleteEducation = async (req, res) => {
   try {
-    const education = await Education.findById(req.params.id);
+    const education = await Education.findByIdAndDelete(req.params.id);
     if (!education) return res.status(404).json({ message: 'Education not found' });
-
-    await education.remove();
-    res.status(200).json({ message: 'Education deleted' });
+    res.json({ message: 'Education deleted' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Failed to delete education' });
   }
 };
