@@ -11,8 +11,20 @@ const app = express();
 
 require('dotenv').config();
 
+// Log every incoming request
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Server Error:', err.stack);
+  res.status(500).json({ message: 'Internal Server Error' });
+});
 
 app.use('/api/education', educationRoutes);
 app.use('/api/skills', skillRoutes);
