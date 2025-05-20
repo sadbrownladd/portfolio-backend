@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Project = require('../models/Project');
 const Joi = require('joi');
+const { validateSchema } = require('../utils/validation'); // Import shared utility
 
 const projectSchema = Joi.object({
   title: Joi.string().required().messages({
@@ -19,16 +20,6 @@ const projectSchema = Joi.object({
   }),
 });
 
-const validateProject = (data) => {
-  console.log('Validating project data:', data);
-  const { error } = projectSchema.validate(data, { abortEarly: false });
-  if (error) {
-    console.error('Validation Error:', error.details);
-    return error.details.map((detail) => detail.message);
-  }
-  return null;
-};
-
 exports.getAllProjects = async (req, res) => {
   try {
     console.log('Fetching all projects from MongoDB');
@@ -43,7 +34,7 @@ exports.getAllProjects = async (req, res) => {
 
 exports.createProject = async (req, res) => {
   try {
-    const validationErrors = validateProject(req.body);
+    const validationErrors = validateSchema(projectSchema, req.body); // Use shared utility
     if (validationErrors) {
       console.log('Validation failed, sending 400 response');
       return res.status(400).json({ errors: validationErrors });
@@ -82,7 +73,7 @@ exports.getProjectById = async (req, res) => {
 
 exports.updateProject = async (req, res) => {
   try {
-    const validationErrors = validateProject(req.body);
+    const validationErrors = validateSchema(projectSchema, req.body); // Use shared utility
     if (validationErrors) {
       console.log('Validation failed for update, sending 400 response');
       return res.status(400).json({ errors: validationErrors });
