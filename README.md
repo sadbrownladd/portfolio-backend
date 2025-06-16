@@ -96,3 +96,6 @@ This project is licensed under the MIT License—feel free to use, modify, and s
 
 Thanks for Stopping By! 🙌
 If you have questions, suggestions, or just want to chat about code, drop me a line. Happy coding!
+
+![image](https://github.com/user-attachments/assets/1c485ea4-ee30-4de0-9033-7203ea3b5f26)
+
